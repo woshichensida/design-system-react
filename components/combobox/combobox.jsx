@@ -53,6 +53,10 @@ const propTypes = {
 		selectedListboxLabel: PropTypes.string
 	}),
 	/**
+	 * TODO: add description
+	 */
+	children: PropTypes.node,
+	/**
 	 * CSS classes to be added to tag with `.slds-combobox`. Uses `classNames` [API](https://github.com/JedWatson/classnames). _Tested with snapshot testing._
 	 */
 	className: PropTypes.oneOfType([PropTypes.array, PropTypes.object, PropTypes.string]),
@@ -94,6 +98,10 @@ const propTypes = {
 	 * By default, dialogs will flip their alignment (such as bottom to top) if they extend beyond a boundary element such as a scrolling parent or a window/viewpoint. This is the opposite of "flippable."
 	 */
 	hasStaticAlignment: PropTypes.bool,
+	/**
+	 * This prop will hide the `<InnerInput>` on `Combobox`. Only applies when `variant="dynamic-menu"`.
+	 */
+	hideInput: PropTypes.bool,
 	/**
 	 * HTML id for component. _Tested with snapshot testing._
 	 */
@@ -164,7 +172,7 @@ const propTypes = {
 	/**
 	 * Changes styles of the input. Currently `entity` is not supported. _Tested with snapshot testing._
 	 */
-	variant: PropTypes.oneOf(['base', 'inline-listbox', 'readonly'])
+	variant: PropTypes.oneOf(['base', 'dynamic-menu', 'inline-listbox', 'readonly'])
 };
 
 const defaultProps = {
@@ -251,7 +259,7 @@ class Combobox extends React.Component {
    */
 
 	getId = () => this.props.id || this.generatedId;
-	
+
 	getIsOpen = () => !!(isBoolean(this.props.isOpen) ? this.props.isOpen : this.state.isOpen);
 
 	getIsActiveOption = () => this.state.activeOption && this.state.activeOptionIndex !== -1;
@@ -376,10 +384,10 @@ class Combobox extends React.Component {
 	renderMenu = ({ assistiveText, labels }) => {
 		const menuVariant = {
 			base: 'icon-title-subtitle',
+			'dynamic-menu': 'icon-title-subtitle',
 			'inline-listbox': 'icon-title-subtitle',
 			readonly: 'checkbox'
 		};
-
 		return (
 			<Menu
 				assistiveText={assistiveText}
@@ -388,6 +396,7 @@ class Combobox extends React.Component {
 				classNameMenu={this.props.classNameMenu}
 				inputId={this.getId()}
 				inputValue={this.props.value}
+				isDynamicMenu={this.props.variant === 'dynamic-menu'}
 				isSelected={this.isSelected}
 				itemVisibleLength={this.props.variant === 'readonly'
 					? this.props.readOnlyMenuItemVisibleLength
@@ -703,6 +712,89 @@ class Combobox extends React.Component {
 		</div>
 	);
 
+	renderDynamicMenu = (props) => {
+		const {
+			assistiveText,
+			className,
+			hideInput,
+			labels,
+			predefinedOptionsOnly,
+			value
+		} = this.props;
+		return (
+			<div>
+				<div className="slds-form-element__control">
+					<div className="slds-combobox_container">
+						<div
+							className={classNames(
+								'slds-combobox',
+								'slds-is-open',
+								className
+							)}
+							aria-expanded
+							aria-haspopup="listbox" // eslint-disable-line jsx-a11y/aria-proptypes
+							// used on menu's listbox
+							aria-owns={`${this.getId()}-listbox`} // eslint-disable-line jsx-a11y/aria-proptypes
+							role="combobox"
+						>
+							<div
+								className="
+								slds-combobox__form-element
+								slds-input-has-icon
+								slds-input-has-icon_right
+								slds-m-around_small"
+								role="none"
+							>
+								{!hideInput &&
+									<InnerInput
+										aria-autocomplete="list"
+										aria-controls={`${this.getId()}-listbox`}
+										aria-activedescendant={this.state.activeOption
+											? `${this.getId()}-listbox-option-${this.state.activeOption.id}`
+											:	null}
+										autoComplete="off"
+										className="slds-input slds-combobox__input"
+										containerProps={{
+											className: 'slds-combobox__form-element',
+											role: 'none'
+										}}
+										iconRight={<InputIcon
+											category="utility"
+											name="search"
+											title={labels.inputIconTitle}
+										/>}
+										id={this.getId()}
+										onFocus={this.handleInputFocus}
+										onBlur={this.handleInputBlur}
+										onKeyDown={this.handleKeyDown}
+										inputRef={this.setInputRef}
+										onClick={() => {
+											this.openDialog();
+										}}
+										onChange={this.handleInputChange}
+										placeholder={labels.placeholder}
+										readOnly={!!(predefinedOptionsOnly && this.state.activeOption)}
+										role="textbox"
+										value={props.predefinedOptionsOnly
+											? (this.state.activeOption && this.state.activeOption.label)
+												|| value
+											: value}
+									/>
+								}
+							</div>
+							<div
+								id={this.getId()}
+								role="listbox"
+							>
+								{this.renderMenu({ assistiveText, labels })}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		);
+	};
+
 	renderInlineSingle = ({ assistiveText, labels, props }) => {
 		const iconLeft = props.selection[0] && props.selection[0].icon
 			? React.cloneElement(props.selection[0].icon, {
@@ -711,8 +803,8 @@ class Combobox extends React.Component {
 			: null;
 
 		const value = props.selection[0] && props.selection[0].label
-									? props.selection[0].label
-									: props.value;
+			? props.selection[0].label
+			: props.value;
 
 		/* eslint-disable jsx-a11y/role-supports-aria-props */
 		return (
@@ -1043,6 +1135,10 @@ class Combobox extends React.Component {
 				multiple: this.renderBase,	// same
 				single: this.renderBase
 			},
+			'dynamic-menu': {
+				multiple: this.renderDynamicMenu,	// same
+				single: this.renderDynamicMenu
+			},
 			'inline-listbox': {
 				multiple: this.renderInlineMultiple,
 				single: this.renderInlineSingle
@@ -1053,7 +1149,6 @@ class Combobox extends React.Component {
 			}
 		};
 		const variantExists = subRenders[this.props.variant][multipleOrSingle];
-
 		return (
 			<div
 				className={classNames(
@@ -1068,8 +1163,8 @@ class Combobox extends React.Component {
 				/>
 				{
 					variantExists
-				? subRenders[this.props.variant][multipleOrSingle](subRenderParameters)
-				: subRenders.base.multiple(subRenderParameters)}
+						? subRenders[this.props.variant][multipleOrSingle](subRenderParameters)
+						: subRenders.base.multiple(subRenderParameters)}
 			</div>
 		);
 	}

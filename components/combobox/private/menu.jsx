@@ -31,6 +31,10 @@ const propTypes = {
 	 * Id used for assistive technology
 	 */
 	inputId: PropTypes.string,
+	/*
+	*
+	*/
+	isDynamicMenu: PropTypes.bool,
 	/**
 	 * Determines the height of the menu based on SLDS CSS classes.
 	 */
@@ -105,10 +109,10 @@ const Menu = (props) => {
 							role="option"
 						>
 							{optionData.icon && !props.menuItem
-							? <span className="slds-media__figure">
-								{optionData.icon}
-							</span>
-							: null}
+								? <span className="slds-media__figure">
+									{optionData.icon}
+								</span>
+								: null}
 							{props.menuItem
 								? <MenuItem
 									assistiveText={props.assistiveText}
@@ -160,24 +164,31 @@ const Menu = (props) => {
 										{selected
 											? <span className="slds-assistive-text">{props.assistiveText.optionSelectedInMenu}</span>
 											: null} {optionData.label}</span>
-									}
+								}
 							</span>
 						</span>
-				)
+					)
 				}[props.variant]}
 			</li>
 		);
 	});
 
+	const dynamicMenuClasses = () => (
+		'slds-dropdown_length-10'
+	);
+
+	const applyClassVariants = props.isDynamicMenu ? dynamicMenuClasses() :
+		('slds-dropdown', 'slds-dropdown_fluid',
+		{
+			'slds-dropdown_length-with-icon-5': props.itemVisibleLength === 5,
+			'slds-dropdown_length-with-icon-7': props.itemVisibleLength === 7,
+			'slds-dropdown_length-with-icon-10': props.itemVisibleLength === 10
+		},
+		props.classNameMenu
+		);
 	return (
 		<ul
-			className={classNames('slds-listbox slds-listbox_vertical slds-dropdown slds-dropdown_fluid',
-				{
-					'slds-dropdown_length-with-icon-5': props.itemVisibleLength === 5,
-					'slds-dropdown_length-with-icon-7': props.itemVisibleLength === 7,
-					'slds-dropdown_length-with-icon-10': props.itemVisibleLength === 10
-				},
-				props.classNameMenu)}
+			className={classNames('slds-listbox slds-listbox_vertical', applyClassVariants)}
 			role="presentation"
 		>
 			{menuOptions.length

@@ -108,11 +108,15 @@ const Popover = createReactClass({
 		 */
 		body: PropTypes.oneOfType([PropTypes.node, PropTypes.array]).isRequired,
 		/**
+		 * CSS classes to be added to the popover body. That is the element with `.slds-popover__body` on it.
+		 */
+		bodyClassName: PropTypes.oneOfType([PropTypes.array, PropTypes.object, PropTypes.string]),
+		/**
 		 * CSS classes to be added to the popover. That is the element with `.slds-popover` on it.
 		 */
 		className: PropTypes.oneOfType([PropTypes.array, PropTypes.object, PropTypes.string]),
 		/*
-		 * All popovers require a close button.
+		 * Assistive text related to close button.
 		*/
 		closeButtonAssistiveText: PropTypes.oneOfType([PropTypes.string]),
 		/**
@@ -130,6 +134,10 @@ const Popover = createReactClass({
 		 * All popovers require a heading that labels the popover for assistive technology users. This text will be placed within a heading HTML tag. A heading is **highly recommended for accessibility reasons.** Please see `ariaLabelledby` prop.
 		*/
 		heading: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
+		/*
+		 * This prop allows the close button to be hidden on the open popover.
+		*/
+		hideCloseButton: PropTypes.bool,
 		/**
 		* By default, a unique ID will be created at render to support keyboard navigation, ARIA roles, and connect the popover to the triggering button. This ID will be applied to the triggering element. `${id}-popover`, `${id}-dialog-heading`, `${id}-dialog-body` are also created.
 		*/
@@ -163,7 +171,7 @@ const Popover = createReactClass({
 		 */
 		onOpen: PropTypes.func,
 		/**
-		 * This function is triggered when the user clicks outside the Popover or clicks the close button. You will want to define this if Popover is to be a controlled component. Most of the time you will want wnat to set `isOpen` to `false` when this is triggered unless you need to validate something.
+		 * This function is triggered when the user clicks outside the Popover or clicks the close button. You will want to define this if Popover is to be a controlled component. Most of the time you will want to set `isOpen` to `false` when this is triggered unless you need to validate something.
 		 */
 		onRequestClose: PropTypes.func,
 		/**
@@ -425,9 +433,9 @@ const Popover = createReactClass({
 						aria-labelledby={this.props.ariaLabelledby ? this.props.ariaLabelledby : `${this.getId()}-dialog-heading`}
 						aria-describedby={`${this.getId()}-dialog-body`}
 						className={classNames(
-						'slds-popover',
-						getNubbinClassName(props.align),
-						props.className,
+							'slds-popover',
+							getNubbinClassName(props.align),
+							props.className,
 						)}
 						id={`${this.getId()}-popover`}
 						role="dialog"
@@ -435,14 +443,16 @@ const Popover = createReactClass({
 						tabIndex="-1"
 						ref={this.setMenuRef}
 					>
-						<Button
-							assistiveText={props.closeButtonAssistiveText}
-							iconName="close"
-							iconSize="small"
-							className="slds-button slds-button--icon-small slds-float--right slds-popover__close slds-button--icon"
-							onClick={this.handleCancel}
-							variant="icon"
-						/>
+						{!this.props.hideCloseButton &&
+							<Button
+								assistiveText={props.closeButtonAssistiveText}
+								iconName="close"
+								iconSize="small"
+								className="slds-button slds-button--icon-small slds-float--right slds-popover__close slds-button--icon"
+								onClick={this.handleCancel}
+								variant="icon"
+							/>
+						}
 						{this.props.heading
 							? <header
 								className="slds-popover__header"
@@ -452,7 +462,7 @@ const Popover = createReactClass({
 							: null}
 						<div
 							id={`${this.getId()}-dialog-body`}
-							className="slds-popover__body"
+							className={classNames(this.props.bodyClassName, 'slds-popover__body')}
 						>
 							{props.body}
 						</div>
